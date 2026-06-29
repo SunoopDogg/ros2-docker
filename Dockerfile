@@ -1,11 +1,11 @@
-ARG BASE_IMAGE=nvidia/cuda:13.1.2-cudnn-devel-ubuntu24.04
+ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 
-# Distro-specific values. docker-compose supplies these per service; the defaults here only apply to a bare `docker build`.
-ARG ROS_DISTRO=jazzy
-ARG UBUNTU_CODENAME=noble
-ARG ROS_APT_SOURCE_VERSION=1.2.0
-ARG ROS_APT_SOURCE_SHA256=0804d9b13db770eb87019be414cd78378835228ad5fa801fc88758596dd8f7e5
+# Supplied per service by docker-compose.yaml.
+ARG ROS_DISTRO
+ARG UBUNTU_CODENAME
+ARG ROS_APT_SOURCE_VERSION
+ARG ROS_APT_SOURCE_SHA256
 
 ENV DEBIAN_FRONTEND=noninteractive 
 
