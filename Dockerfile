@@ -26,7 +26,6 @@ RUN curl -L -s -f -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastruc
     && rm -rf /var/lib/apt/lists/*
 
 # Setup environment
-# ROS_DISTRO is promoted to ENV because scripts/link_ros_to_venv.sh and every `source /opt/ros/$ROS_DISTRO/setup.bash` read it at runtime, after ARGs are gone.
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     ROS_DISTRO=${ROS_DISTRO}
@@ -57,7 +56,7 @@ RUN colcon mixin add default \
     colcon metadata update
 
 # Install ros2 packages
-# Jetson base images such as dustynv/ros:* already carry a source build of ROS at /opt/ros/$ROS_DISTRO; installing the apt packages on top would leave two copies.
+# Skipped when the base image already ships ROS (e.g. dustynv/ros:*), to avoid two copies.
 RUN if [ -d "/opt/ros/${ROS_DISTRO}" ]; then \
         echo "ROS ${ROS_DISTRO} already present in base image; skipping apt install"; \
     else \
