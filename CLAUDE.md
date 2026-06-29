@@ -60,7 +60,7 @@ which prevents all six from starting at once.
   merging with `x-amd64`. A YAML merge replaces `volumes` and `environment`
   wholesale rather than appending, so the extra Jetson mounts (`argus_socket`,
   `.Xauthority`) cannot be layered on top of the shared list.
-- **Image tags**: `ros-docker:<distro>` and `ros-docker-jetson:<distro>`, so
+- **Image tags**: `ros2-docker:<distro>` and `ros2-docker-jetson:<distro>`, so
   Humble and Jazzy images coexist. Both distros share one Compose project, so
   running one while the other is up produces a harmless orphan-container warning.
 - **X11 forwarding**: All services mount `/tmp/.X11-unix` and set `DISPLAY`; the

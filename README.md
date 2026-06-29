@@ -1,4 +1,4 @@
-# ros-docker
+# ros2-docker
 
 A template repository for ROS 2 development in Docker. One Dockerfile and one
 Compose file cover both ROS 2 Humble and Jazzy across three targets (CPU, NVIDIA
@@ -38,8 +38,8 @@ docker compose --profile jazzy-gpu down  # stop and remove
 A bare `docker compose up -d` starts nothing. That is deliberate — it keeps all
 six services from coming up at once.
 
-Humble and Jazzy images are tagged separately (`ros-docker:humble` vs
-`ros-docker:jazzy`), so both can exist side by side. Running one while the other
+Humble and Jazzy images are tagged separately (`ros2-docker:humble` vs
+`ros2-docker:jazzy`), so both can exist side by side. Running one while the other
 is up produces an orphan-container warning from Compose; it is harmless.
 
 ## GUI applications

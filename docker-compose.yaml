@@ -69,7 +69,7 @@ services:
   humble:
     <<: *amd64
     profiles: [humble]
-    image: ros-docker:humble
+    image: ros2-docker:humble
     build:
       context: .
       args:
@@ -79,7 +79,7 @@ services:
   humble-gpu:
     <<: [*amd64, *gpu]
     profiles: [humble-gpu]
-    image: ros-docker:humble
+    image: ros2-docker:humble
     build:
       context: .
       args:
@@ -89,7 +89,7 @@ services:
   humble-jetson:
     <<: *jetson
     profiles: [humble-jetson]
-    image: ros-docker-jetson:humble
+    image: ros2-docker-jetson:humble
     build:
       context: .
       args:
@@ -100,7 +100,7 @@ services:
   jazzy:
     <<: *amd64
     profiles: [jazzy]
-    image: ros-docker:jazzy
+    image: ros2-docker:jazzy
     build:
       context: .
       args:
@@ -110,7 +110,7 @@ services:
   jazzy-gpu:
     <<: [*amd64, *gpu]
     profiles: [jazzy-gpu]
-    image: ros-docker:jazzy
+    image: ros2-docker:jazzy
     build:
       context: .
       args:
@@ -120,7 +120,7 @@ services:
   jazzy-jetson:
     <<: *jetson
     profiles: [jazzy-jetson]
-    image: ros-docker-jetson:jazzy
+    image: ros2-docker-jetson:jazzy
     build:
       context: .
       args:
