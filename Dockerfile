@@ -42,8 +42,11 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && rm -rf /var/lib/apt/lists/*
 
 # bootstrap rosdep
-RUN rosdep init && \
-  rosdep update --rosdistro $ROS_DISTRO
+# init is skipped when the base image already ran it (e.g. dustynv/ros:*).
+RUN if [ ! -f /etc/ros/rosdep/sources.list.d/20-default.list ]; then \
+        rosdep init; \
+    fi \
+    && rosdep update --rosdistro $ROS_DISTRO
 
 # Setup colcon mixin and metadata
 RUN colcon mixin add default \
