@@ -1,61 +1,131 @@
+# One service per (ROS distro, target) combination. Each service sits in a profile
+# named after itself, so naming the service on the command line selects it and
+# activates its profile automatically:
+#
+#   docker compose up -d --build jazzy      # build + start
+#   docker compose exec jazzy bash          # shell
+#   docker compose --profile jazzy down     # stop and remove (down needs the profile)
+#
+# A bare `docker compose up -d` starts nothing, by design.
+
+x-humble-args: &humble-args
+  ROS_DISTRO: humble
+  UBUNTU_CODENAME: jammy
+  ROS_APT_SOURCE_VERSION: "1.1.0"
+  ROS_APT_SOURCE_SHA256: 1600cb8cc28258a39bffc1736a75bcbf52d1f2db371a4d020c1b187d2a5a083b
+
+x-jazzy-args: &jazzy-args
+  ROS_DISTRO: jazzy
+  UBUNTU_CODENAME: noble
+  ROS_APT_SOURCE_VERSION: "1.2.0"
+  ROS_APT_SOURCE_SHA256: 0804d9b13db770eb87019be414cd78378835228ad5fa801fc88758596dd8f7e5
+
+x-amd64: &amd64
+  volumes:
+    - .:/root/ws
+    - /tmp/.X11-unix:/tmp/.X11-unix
+    - uv-cache:/root/.cache/uv
+  environment:
+    - DISPLAY=${DISPLAY:-host.docker.internal:0}
+    - QT_X11_NO_MITSHM=1
+  network_mode: host
+  working_dir: /root/ws
+  ipc: host
+  privileged: true
+  tty: true
+
+x-gpu: &gpu
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu, utility, compute, graphics]
+
+# Spelled out in full rather than merged with x-amd64: a YAML merge replaces
+# `volumes` and `environment` wholesale instead of appending, so the extra Jetson
+# mounts cannot be added on top of the shared list.
+x-jetson: &jetson
+  volumes:
+    - .:/root/ws
+    - /tmp/.X11-unix:/tmp/.X11-unix
+    - /tmp/argus_socket:/tmp/argus_socket
+    - ~/.Xauthority:/root/.Xauthority
+    - uv-cache:/root/.cache/uv
+  environment:
+    - DISPLAY=${DISPLAY}
+    - QT_X11_NO_MITSHM=1
+    - XAUTHORITY=/root/.Xauthority
+  network_mode: host
+  working_dir: /root/ws
+  ipc: host
+  privileged: true
+  runtime: nvidia
+  tty: true
+
 services:
-  # ===== AMD64 =====
-  ros-humble-docker:
-    image: cuda13.1.2:humble-uv-nvm
-    build: .
-    container_name: ros-humble-docker
-    volumes:
-      - .:/root/ros-humble-docker
-      - /tmp/.X11-unix:/tmp/.X11-unix
-      - uv-cache:/root/.cache/uv
-    environment:
-      - DISPLAY=${DISPLAY:-host.docker.internal:0}
-      - QT_X11_NO_MITSHM=1
-    network_mode: host
-    working_dir: /root/ros-humble-docker
-    ipc: host
-    privileged: true
-    tty: true
-
-  ros-humble-docker-gpu:
-    container_name: ros-humble-docker-gpu
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu, utility, compute, graphics]
-    extends:
-      service: ros-humble-docker
-    profiles:
-      - gpu
-
-  # ===== Jetson ARM64 =====
-  ros-humble-docker-jetson:
-    image: cudnn8.9-jetson:humble-uv-nvm
+  # ===== ROS 2 Humble =====
+  humble:
+    <<: *amd64
+    profiles: [humble]
+    image: ros-docker:humble
     build:
+      context: .
       args:
+        <<: *humble-args
+        BASE_IMAGE: nvidia/cuda:13.1.2-cudnn-devel-ubuntu22.04
+
+  humble-gpu:
+    <<: [*amd64, *gpu]
+    profiles: [humble-gpu]
+    image: ros-docker:humble
+    build:
+      context: .
+      args:
+        <<: *humble-args
+        BASE_IMAGE: nvidia/cuda:13.1.2-cudnn-devel-ubuntu22.04
+
+  humble-jetson:
+    <<: *jetson
+    profiles: [humble-jetson]
+    image: ros-docker-jetson:humble
+    build:
+      context: .
+      args:
+        <<: *humble-args
         BASE_IMAGE: dustynv/cudnn:8.9-r36.2.0
-    container_name: ros-humble-docker-jetson
-    volumes:
-      - .:/root/ros-humble-docker
-      - /tmp/.X11-unix:/tmp/.X11-unix
-      - /tmp/argus_socket:/tmp/argus_socket
-      - ~/.Xauthority:/root/.Xauthority
-      - uv-cache:/root/.cache/uv
-    environment:
-      - DISPLAY=${DISPLAY}
-      - QT_X11_NO_MITSHM=1
-      - XAUTHORITY=/root/.Xauthority
-    network_mode: host
-    working_dir: /root/ros-humble-docker
-    ipc: host
-    privileged: true
-    profiles:
-      - jetson
-    runtime: nvidia
-    tty: true
+
+  # ===== ROS 2 Jazzy =====
+  jazzy:
+    <<: *amd64
+    profiles: [jazzy]
+    image: ros-docker:jazzy
+    build:
+      context: .
+      args:
+        <<: *jazzy-args
+        BASE_IMAGE: nvidia/cuda:13.1.2-cudnn-devel-ubuntu24.04
+
+  jazzy-gpu:
+    <<: [*amd64, *gpu]
+    profiles: [jazzy-gpu]
+    image: ros-docker:jazzy
+    build:
+      context: .
+      args:
+        <<: *jazzy-args
+        BASE_IMAGE: nvidia/cuda:13.1.2-cudnn-devel-ubuntu24.04
+
+  jazzy-jetson:
+    <<: *jetson
+    profiles: [jazzy-jetson]
+    image: ros-docker-jetson:jazzy
+    build:
+      context: .
+      args:
+        <<: *jazzy-args
+        BASE_IMAGE: dustynv/ros:jazzy-ros-base-r36.4.0-cu128-24.04
 
 volumes:
   uv-cache:

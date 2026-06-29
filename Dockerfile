@@ -1,7 +1,13 @@
-ARG BASE_IMAGE=nvidia/cuda:13.1.2-cudnn-devel-ubuntu22.04
+ARG BASE_IMAGE=nvidia/cuda:13.1.2-cudnn-devel-ubuntu24.04
 FROM ${BASE_IMAGE}
 
-ENV DEBIAN_FRONTEND=noninteractive
+# Distro-specific values. docker-compose supplies these per service; the defaults here only apply to a bare `docker build`.
+ARG ROS_DISTRO=jazzy
+ARG UBUNTU_CODENAME=noble
+ARG ROS_APT_SOURCE_VERSION=1.2.0
+ARG ROS_APT_SOURCE_SHA256=0804d9b13db770eb87019be414cd78378835228ad5fa801fc88758596dd8f7e5
+
+ENV DEBIAN_FRONTEND=noninteractive 
 
 # Install packages
 RUN apt-get update && apt-get install -q -y --no-install-recommends \
@@ -12,17 +18,18 @@ RUN apt-get update && apt-get install -q -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Setup ROS Apt sources
-RUN curl -L -s -o /tmp/ros2-apt-source.deb https://github.com/ros-infrastructure/ros-apt-source/releases/download/1.1.0/ros2-apt-source_1.1.0.jammy_all.deb \
-    && echo "1600cb8cc28258a39bffc1736a75bcbf52d1f2db371a4d020c1b187d2a5a083b /tmp/ros2-apt-source.deb" | sha256sum --strict --check \
+RUN curl -L -s -o /tmp/ros2-apt-source.deb "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.${UBUNTU_CODENAME}_all.deb" \
+    && echo "${ROS_APT_SOURCE_SHA256}  /tmp/ros2-apt-source.deb" | sha256sum --strict --check \
     && apt-get update \
     && apt-get install /tmp/ros2-apt-source.deb \
     && rm -f /tmp/ros2-apt-source.deb \
     && rm -rf /var/lib/apt/lists/*
 
 # Setup environment
+# ROS_DISTRO is promoted to ENV because scripts/link_ros_to_venv.sh and every `source /opt/ros/$ROS_DISTRO/setup.bash` read it at runtime, after ARGs are gone.
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    ROS_DISTRO=humble
+    ROS_DISTRO=${ROS_DISTRO}
 
 # Install bootstrap tools
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -47,10 +54,14 @@ RUN colcon mixin add default \
     colcon metadata update
 
 # Install ros2 packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ros-humble-ros-base=0.10.0-1* \
-    && rm -rf /var/lib/apt/lists/*
-
+# Jetson base images such as dustynv/ros:* already carry a source build of ROS at /opt/ros/$ROS_DISTRO; installing the apt packages on top would leave two copies.
+RUN if [ -d "/opt/ros/${ROS_DISTRO}" ]; then \
+        echo "ROS ${ROS_DISTRO} already present in base image; skipping apt install"; \
+    else \
+        apt-get update && apt-get install -y --no-install-recommends \
+        "ros-${ROS_DISTRO}-ros-base" \
+        && rm -rf /var/lib/apt/lists/*; \
+    fi
 
 # System packages
 RUN apt update && apt install -y --no-install-recommends \

@@ -1,7 +1,9 @@
 [project]
-name = "ros-humble-docker"
+name = "ros-docker"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
+# Kept loose on purpose: the container's system Python is 3.10 on Ubuntu 22.04
+# (Humble) and 3.12 on 24.04 (Jazzy). UV_PYTHON in the Dockerfile picks it.
 requires-python = ">=3.10"
 dependencies = []
