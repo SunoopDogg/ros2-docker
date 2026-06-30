@@ -83,7 +83,8 @@ Note the `-l`: the uv installer only adds itself to `PATH` from `~/.bashrc`, so
 ## ROS 2 workspace
 
 `src/` is the colcon workspace source directory. The repo root is bind-mounted at
-`/root/ws` inside every container.
+`/root/<project name>` inside every container — the Compose project name, which
+defaults to the lowercased repo directory name (e.g. `/root/ros2-docker`).
 
 ```bash
 source /opt/ros/$ROS_DISTRO/setup.bash

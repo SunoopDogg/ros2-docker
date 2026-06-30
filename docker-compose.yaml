@@ -12,7 +12,7 @@ x-jazzy-args: &jazzy-args
 
 x-base: &base
   network_mode: host
-  working_dir: /root/ws
+  working_dir: /root/${COMPOSE_PROJECT_NAME}
   ipc: host
   privileged: true
   tty: true
@@ -20,7 +20,7 @@ x-base: &base
 x-amd64: &amd64
   <<: *base
   volumes:
-    - .:/root/ws
+    - .:/root/${COMPOSE_PROJECT_NAME}
     - /tmp/.X11-unix:/tmp/.X11-unix
     - uv-cache:/root/.cache/uv
   environment:
@@ -42,7 +42,7 @@ x-gpu: &gpu
 x-jetson: &jetson
   <<: *base
   volumes:
-    - .:/root/ws
+    - .:/root/${COMPOSE_PROJECT_NAME}
     - /tmp/.X11-unix:/tmp/.X11-unix
     - /tmp/argus_socket:/tmp/argus_socket
     - ~/.Xauthority:/root/.Xauthority
