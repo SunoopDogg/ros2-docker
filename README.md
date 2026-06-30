@@ -10,8 +10,9 @@ Pick a service and start it. There is nothing to configure first — the service
 name selects the ROS distro and the target together.
 
 ```bash
-docker compose up -d --build jazzy
-docker compose exec jazzy bash
+docker compose up -d --build jazzy     # build and start
+docker compose exec jazzy bash         # shell into it
+docker compose --profile jazzy down    # stop and remove
 ```
 
 ## Services
@@ -27,13 +28,7 @@ docker compose exec jazzy bash
 
 Each service is in a profile named after itself. Naming a service on the command
 line activates its profile automatically, so `--profile` is only needed for
-`docker compose down`:
-
-```bash
-docker compose up -d --build jazzy-gpu   # build and start
-docker compose exec jazzy-gpu bash       # shell into it
-docker compose --profile jazzy-gpu down  # stop and remove
-```
+`docker compose down`.
 
 A bare `docker compose up -d` starts nothing. That is deliberate — it keeps all
 six services from coming up at once.
@@ -54,13 +49,10 @@ xhost +local:docker
 ## Python and uv
 
 The container's system Python is used directly — 3.10 on Ubuntu 22.04 (Humble),
-3.12 on 24.04 (Jazzy). There is no `.python-version` file, since no single value
-fits both; uv resolves `requires-python = ">=3.10"` against the system
-interpreter on its own.
+3.12 on 24.04 (Jazzy).
 
 ```bash
 source /opt/ros/$ROS_DISTRO/setup.bash
-uv sync
 bash scripts/link_ros_to_venv.sh
 source .venv/bin/activate
 ```
@@ -74,7 +66,7 @@ into `.venv/lib/python<version>/site-packages/ros2.pth`. Verify it worked:
 
 ```bash
 docker compose run --rm jazzy bash -lc \
-  'source /opt/ros/$ROS_DISTRO/setup.bash && uv sync && bash scripts/link_ros_to_venv.sh && .venv/bin/python -c "import rclpy; print(rclpy.__file__)"'
+  'source /opt/ros/$ROS_DISTRO/setup.bash && bash scripts/link_ros_to_venv.sh && .venv/bin/python -c "import rclpy; print(rclpy.__file__)"'
 ```
 
 Note the `-l`: the uv installer only adds itself to `PATH` from `~/.bashrc`, so
