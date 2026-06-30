@@ -1,13 +1,3 @@
-# One service per (ROS distro, target) combination. Each service sits in a profile
-# named after itself, so naming the service on the command line selects it and
-# activates its profile automatically:
-#
-#   docker compose up -d --build jazzy      # build + start
-#   docker compose exec jazzy bash          # shell
-#   docker compose --profile jazzy down     # stop and remove (down needs the profile)
-#
-# A bare `docker compose up -d` starts nothing, by design.
-
 x-humble-args: &humble-args
   ROS_DISTRO: humble
   UBUNTU_CODENAME: jammy
@@ -20,7 +10,15 @@ x-jazzy-args: &jazzy-args
   ROS_APT_SOURCE_VERSION: "1.2.0"
   ROS_APT_SOURCE_SHA256: 0804d9b13db770eb87019be414cd78378835228ad5fa801fc88758596dd8f7e5
 
+x-base: &base
+  network_mode: host
+  working_dir: /root/ws
+  ipc: host
+  privileged: true
+  tty: true
+
 x-amd64: &amd64
+  <<: *base
   volumes:
     - .:/root/ws
     - /tmp/.X11-unix:/tmp/.X11-unix
@@ -28,11 +26,6 @@ x-amd64: &amd64
   environment:
     - DISPLAY=${DISPLAY:-host.docker.internal:0}
     - QT_X11_NO_MITSHM=1
-  network_mode: host
-  working_dir: /root/ws
-  ipc: host
-  privileged: true
-  tty: true
 
 x-gpu: &gpu
   deploy:
@@ -43,10 +36,11 @@ x-gpu: &gpu
             count: all
             capabilities: [gpu, utility, compute, graphics]
 
-# Spelled out in full rather than merged with x-amd64: a YAML merge replaces
-# `volumes` and `environment` wholesale instead of appending, so the extra Jetson
-# mounts cannot be added on top of the shared list.
+# Lists are spelled out in full rather than merged with x-amd64: a YAML merge
+# replaces `volumes` and `environment` wholesale instead of appending, so the
+# extra Jetson mounts cannot be added on top of the shared list.
 x-jetson: &jetson
+  <<: *base
   volumes:
     - .:/root/ws
     - /tmp/.X11-unix:/tmp/.X11-unix
@@ -57,12 +51,7 @@ x-jetson: &jetson
     - DISPLAY=${DISPLAY}
     - QT_X11_NO_MITSHM=1
     - XAUTHORITY=/root/.Xauthority
-  network_mode: host
-  working_dir: /root/ws
-  ipc: host
-  privileged: true
   runtime: nvidia
-  tty: true
 
 services:
   # ===== ROS 2 Humble =====
@@ -70,7 +59,7 @@ services:
     <<: *amd64
     profiles: [humble]
     image: ros2-docker:humble
-    build:
+    build: &humble-build
       context: .
       args:
         <<: *humble-args
@@ -80,11 +69,7 @@ services:
     <<: [*amd64, *gpu]
     profiles: [humble-gpu]
     image: ros2-docker:humble
-    build:
-      context: .
-      args:
-        <<: *humble-args
-        BASE_IMAGE: nvidia/cuda:13.1.2-cudnn-devel-ubuntu22.04
+    build: *humble-build
 
   humble-jetson:
     <<: *jetson
@@ -101,7 +86,7 @@ services:
     <<: *amd64
     profiles: [jazzy]
     image: ros2-docker:jazzy
-    build:
+    build: &jazzy-build
       context: .
       args:
         <<: *jazzy-args
@@ -111,11 +96,7 @@ services:
     <<: [*amd64, *gpu]
     profiles: [jazzy-gpu]
     image: ros2-docker:jazzy
-    build:
-      context: .
-      args:
-        <<: *jazzy-args
-        BASE_IMAGE: nvidia/cuda:13.1.2-cudnn-devel-ubuntu24.04
+    build: *jazzy-build
 
   jazzy-jetson:
     <<: *jetson
