@@ -6,8 +6,7 @@ GPU, Jetson ARM64).
 
 ## Quick start
 
-Pick a service and start it. There is nothing to configure first — the service
-name selects the ROS distro and the target together.
+Pick a service and start it.
 
 ```bash
 docker compose up -d --build jazzy     # build and start
@@ -26,21 +25,9 @@ docker compose --profile jazzy down    # stop and remove
 | `jazzy-gpu` | Jazzy | NVIDIA GPU | same as `jazzy` |
 | `jazzy-jetson` | Jazzy | Jetson ARM64 | `dustynv/ros:jazzy-ros-base-r36.4.0-cu128-24.04` |
 
-Each service is in a profile named after itself. Naming a service on the command
-line activates its profile automatically, so `--profile` is only needed for
-`docker compose down`.
-
-A bare `docker compose up -d` starts nothing. That is deliberate — it keeps all
-six services from coming up at once.
-
-Humble and Jazzy images are tagged separately (`ros2-docker:humble` vs
-`ros2-docker:jazzy`), so both can exist side by side. Running one while the other
-is up produces an orphan-container warning from Compose; it is harmless.
-
 ## GUI applications
 
-All services mount `/tmp/.X11-unix` and set `DISPLAY`. On the host, allow the
-container to reach your X server before launching anything graphical:
+Before launching anything graphical, run on the host:
 
 ```bash
 xhost +local:docker
@@ -57,36 +44,13 @@ bash scripts/link_ros_to_venv.sh
 source .venv/bin/activate
 ```
 
-Sourcing `setup.bash` first is required, not optional: the `.pth` file only adds
-Python module paths, while `rclpy`'s C extension needs `LD_LIBRARY_PATH` to find
-`librcl_action.so` and friends.
-
-`scripts/link_ros_to_venv.sh` writes `/opt/ros/$ROS_DISTRO` site-packages paths
-into `.venv/lib/python<version>/site-packages/ros2.pth`. Verify it worked:
-
-```bash
-docker compose run --rm jazzy bash -lc \
-  'source /opt/ros/$ROS_DISTRO/setup.bash && bash scripts/link_ros_to_venv.sh && .venv/bin/python -c "import rclpy; print(rclpy.__file__)"'
-```
-
-Note the `-l`: the uv installer only adds itself to `PATH` from `~/.bashrc`, so
-`uv` is not found in a non-login shell (`bash -c`).
-
 ## ROS 2 workspace
 
-`src/` is the colcon workspace source directory. The repo root is bind-mounted at
-`/root/<project name>` inside every container — the Compose project name, which
-defaults to the lowercased repo directory name (e.g. `/root/ros2-docker`).
+`src/` is the colcon workspace source directory. The repo root is mounted at
+`/root/<repo directory name>` inside the container.
 
 ```bash
 source /opt/ros/$ROS_DISTRO/setup.bash
 colcon build --symlink-install
 source install/setup.bash
 ```
-
-## Adding another ROS distro
-
-Add an `x-<distro>-args` fragment with the four distro values, then three
-services following the existing pattern. The `ROS_APT_SOURCE_SHA256` value is
-the checksum of the `ros2-apt-source` `.deb` for that Ubuntu codename; find it on
-the [ros-apt-source releases page](https://github.com/ros-infrastructure/ros-apt-source/releases).
