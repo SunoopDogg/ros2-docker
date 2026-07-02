@@ -60,7 +60,7 @@ services:
       context: .
       args:
         <<: *humble-args
-        BASE_IMAGE: nvidia/cuda:13.1.2-cudnn-devel-ubuntu22.04
+        BASE_IMAGE: nvidia/cuda:13.3.1-cudnn-devel-ubuntu22.04
 
   humble-gpu:
     <<: [*amd64, *gpu]
@@ -87,7 +87,7 @@ services:
       context: .
       args:
         <<: *jazzy-args
-        BASE_IMAGE: nvidia/cuda:13.1.2-cudnn-devel-ubuntu24.04
+        BASE_IMAGE: nvidia/cuda:13.3.1-cudnn-devel-ubuntu24.04
 
   jazzy-gpu:
     <<: [*amd64, *gpu]
